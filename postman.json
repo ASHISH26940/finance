@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "Finance Backend",
+    "_postman_id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
+    "description": "Finance API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Records",
+      "item": [
+        {
+          "name": "Create Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1000,\n  \"type\": \"income\",\n  \"category_id\": 1,\n  \"date\": \"2026-04-05T10:00:00Z\",\n  \"note\": \"Test income\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/records",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["records"]
+            }
+          }
+        },
+        {
+          "name": "Get Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/records",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["records"]
+            }
+          }
+        },
+        {
+          "name": "Update Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 2000,\n  \"note\": \"Updated note\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/records/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["records", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Record",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/records/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["records", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
