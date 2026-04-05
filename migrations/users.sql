@@ -5,6 +5,7 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     role_id BIGINT UNSIGNED,
     active BOOLEAN DEFAULT true,
+    password_updated_at BIGINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES roles(id)
