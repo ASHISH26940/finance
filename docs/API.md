@@ -13,6 +13,7 @@
 - Protected endpoints require a valid JWT:
 1. Cookie: `token` (set by login/signup)
 2. Header: `Authorization: Bearer <token>`
+3. `POST /auth/logout` revokes the current JWT by blacklisting it until its normal expiry time.
 
 ## Role Permissions
 
@@ -121,6 +122,27 @@ Possible errors:
 - `401` invalid credentials
 - `429` too many attempts
 
+### POST `/auth/logout`
+
+Revokes the current JWT and clears the `token` cookie.
+
+Requires a valid JWT in either the auth cookie or `Authorization` header.
+
+Success response (`200`):
+
+```json
+{
+  "status": "success",
+  "message": "Logout successful"
+}
+```
+
+Notes:
+
+- The current JWT is added to the blacklist in Redis when Redis is available.
+- If Redis is unavailable, blacklist state falls back to in-memory storage.
+- A blacklisted token is rejected by protected routes even if it has not reached its normal `exp` time yet.
+
 ---
 
 ## Record APIs
@@ -158,13 +180,55 @@ Notes:
 - A matching `Idempotency-Key` replays the original response instead of creating a duplicate record.
 - A duplicate request arriving while the original one is still running returns `409`.
 
-### GET `/records/`
+### GET `/records/?page=1&per_page=20`
 
-Returns all records for authenticated user.
+Returns a paginated list of records for the authenticated user, with optional search and filtering.
 
 Permission: `CanViewRecords`
 
-Success response (`200`): array of record objects.
+Query params:
+
+- `page` optional, defaults to `1`
+- `per_page` optional, defaults to `20`, max `100`
+- `search` optional, performs case-insensitive text search on record notes
+- `type` optional, accepts `income` or `expense`
+- `category_id` optional, filters by category ID
+- `from` optional, lower bound for record date, accepts `YYYY-MM-DD` or RFC3339
+- `to` optional, upper bound for record date, accepts `YYYY-MM-DD` or RFC3339
+
+Success response (`200`):
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 12,
+      "user_id": 6,
+      "amount": 1250.75,
+      "type": "income",
+      "category_id": 1,
+      "date": "2026-04-05T10:00:00Z",
+      "note": "salary credit",
+      "created_at": "2026-04-05T10:01:00Z",
+      "updated_at": "2026-04-05T10:01:00Z",
+      "deleted_at": null
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 42,
+    "total_pages": 3
+  }
+}
+```
+
+Example:
+
+```http
+GET /records/?page=1&per_page=10&search=salary&type=income&category_id=1&from=2026-04-01&to=2026-04-30
+```
 
 ### PUT `/records/:id`
 

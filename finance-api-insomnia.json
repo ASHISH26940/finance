@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2026-04-05T00:00:00.000Z",
+  "__export_date": "2026-04-05T12:00:00.000Z",
   "__export_source": "codex.finance",
   "resources": [
     {
@@ -19,6 +19,13 @@
         "base_url": "http://localhost:3000",
         "token": "",
         "record_id": "1",
+        "records_page": "1",
+        "records_per_page": "20",
+        "records_search": "salary",
+        "records_type": "income",
+        "records_category_id": "1",
+        "records_from": "2026-04-01",
+        "records_to": "2026-04-30",
         "trend_period": "monthly",
         "trend_points": "6"
       }
@@ -67,6 +74,20 @@
       ]
     },
     {
+      "_id": "req_auth_logout",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Logout",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/logout",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
       "_id": "fld_records",
       "_type": "request_group",
       "parentId": "wrk_finance_api",
@@ -99,9 +120,23 @@
       "_id": "req_records_get",
       "_type": "request",
       "parentId": "fld_records",
-      "name": "Get Records",
+      "name": "Get Records Paginated",
       "method": "GET",
-      "url": "{{ _.base_url }}/records/",
+      "url": "{{ _.base_url }}/records/?page={{ _.records_page }}&per_page={{ _.records_per_page }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_records_search",
+      "_type": "request",
+      "parentId": "fld_records",
+      "name": "Search Records",
+      "method": "GET",
+      "url": "{{ _.base_url }}/records/?page={{ _.records_page }}&per_page={{ _.records_per_page }}&search={{ _.records_search }}&type={{ _.records_type }}&category_id={{ _.records_category_id }}&from={{ _.records_from }}&to={{ _.records_to }}",
       "headers": [
         {
           "name": "Authorization",

@@ -14,3 +14,4 @@ CREATE INDEX idx_records_user ON financial_records(user_id);
 CREATE INDEX idx_records_type ON financial_records(type);
 CREATE INDEX idx_records_category ON financial_records(category_id);
 CREATE INDEX idx_records_date ON financial_records(date);
+CREATE INDEX idx_records_deleted_at ON financial_records(deleted_at);

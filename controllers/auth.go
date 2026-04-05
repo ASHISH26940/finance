@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"finance/config"
+	"finance/middlewares"
 	"finance/models"
 	"os"
 	"strings"
@@ -195,6 +196,44 @@ func Login(c *fiber.Ctx) error {
 	return nil
 }
 
+func Logout(c *fiber.Ctx) error {
+	tokenValue, ok := c.Locals("token").(string)
+	if !ok || strings.TrimSpace(tokenValue) == "" {
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Missing token",
+		})
+		return nil
+	}
+
+	claims, ok := c.Locals("claims").(jwt.MapClaims)
+	if !ok {
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid token claims",
+		})
+		return nil
+	}
+
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "User ID not found in token claims",
+		})
+		return nil
+	}
+
+	middlewares.AddToBlacklist(tokenValue, userID)
+	clearAuthCookie(c)
+
+	c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Logout successful",
+	})
+	return nil
+}
+
 func generateAuthToken(user models.User) (string, error) {
 	if config.GlobalConfig == nil || strings.TrimSpace(config.GlobalConfig.Secret) == "" {
 		return "", errors.New("server auth secret is not configured")
@@ -237,6 +276,18 @@ func setAuthCookie(c *fiber.Ctx, token string) {
 		Secure:   isProd,
 		SameSite: "Lax",
 		Expires:  time.Now().Add(24 * time.Hour),
+	})
+}
+
+func clearAuthCookie(c *fiber.Ctx) {
+	isProd := strings.EqualFold(strings.TrimSpace(os.Getenv("FN_ENV")), "PROD")
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    "",
+		HTTPOnly: true,
+		Secure:   isProd,
+		SameSite: "Lax",
+		Expires:  time.Now().Add(-time.Hour),
 	})
 }
 

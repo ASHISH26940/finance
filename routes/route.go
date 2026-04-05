@@ -14,6 +14,7 @@ func SetupRoutes(app *fiber.App) {
 	auth := app.Group("/auth")
 	auth.Post("/signup", middlewares.SignupRateLimit(), controllers.Signup)
 	auth.Post("/login", middlewares.AuthRateLimit(), controllers.Login)
+	auth.Post("/logout", middlewares.Protected(), controllers.Logout)
 
 	d := app.Group("/dashboard", middlewares.Protected())
 	d.Get("/summary",

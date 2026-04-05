@@ -139,6 +139,7 @@ func Protected() fiber.Handler {
 		}
 
 		c.Locals("claims", claims)
+		c.Locals("token", tokenString)
 		return c.Next()
 	}
 }
@@ -156,8 +157,18 @@ func AddToBlacklist(token string, userId float64) {
 	blacklistedTokens.Unlock()
 }
 
-func RemoveFromBlacklist(userId float64) {
-	_ = userId
+func RemoveFromBlacklist(token string) {
+	key := blacklistTokenKey(token)
+
+	if database.RedisAvailable() {
+		if err := database.RedisDb.Db.Del(key).Err(); err != nil {
+			log.Printf("redis blacklist delete failed, falling back to in-memory blacklist cleanup: %v", err)
+		}
+	}
+
+	blacklistedTokens.Lock()
+	delete(blacklistedTokens.m, key)
+	blacklistedTokens.Unlock()
 }
 
 func validatePassExpiry(userId uint, tokenTime int64) bool {

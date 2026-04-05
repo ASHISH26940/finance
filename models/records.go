@@ -2,6 +2,7 @@ package models
 
 import (
 	"finance/database"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -62,6 +63,19 @@ type FinancialRecord struct {
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
+type RecordListPage struct {
+	Records []FinancialRecord
+	Total   int64
+}
+
+type RecordListFilters struct {
+	SearchText string
+	RecordType RecordType
+	CategoryID *uint64
+	From       *time.Time
+	To         *time.Time
+}
+
 func (FinancialRecord) TableName() string {
 	return "financial_records"
 }
@@ -74,10 +88,38 @@ func (r *FinancialRecord) GetByID(id uint64) error {
 	return database.Database.Db.First(r, id).Error
 }
 
-func (r *FinancialRecord) GetByUser(userID uint64) ([]FinancialRecord, error) {
+func (r *FinancialRecord) GetByUser(userID uint64, page, perPage int, filters RecordListFilters) (RecordListPage, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	if perPage < 1 {
+		perPage = 20
+	}
+
+	offset := (page - 1) * perPage
+	baseQuery := database.Database.Db.Model(&FinancialRecord{}).Where("user_id = ?", userID)
+	baseQuery = applyRecordFilters(baseQuery, filters)
+
+	var total int64
+	if err := baseQuery.Count(&total).Error; err != nil {
+		return RecordListPage{}, err
+	}
+
 	var records []FinancialRecord
-	err := database.Database.Db.Where("user_id = ?", userID).Find(&records).Error
-	return records, err
+	err := baseQuery.
+		Order("date DESC, id DESC").
+		Offset(offset).
+		Limit(perPage).
+		Find(&records).Error
+	if err != nil {
+		return RecordListPage{}, err
+	}
+
+	return RecordListPage{
+		Records: records,
+		Total:   total,
+	}, nil
 }
 
 func (r *FinancialRecord) Update() error {
@@ -106,4 +148,29 @@ func (r *FinancialRecord) Filter(userID uint64, recordType RecordType, categoryI
 	var records []FinancialRecord
 	err := query.Find(&records).Error
 	return records, err
+}
+
+func applyRecordFilters(query *gorm.DB, filters RecordListFilters) *gorm.DB {
+	if filters.RecordType != "" {
+		query = query.Where("type = ?", filters.RecordType)
+	}
+
+	if filters.CategoryID != nil {
+		query = query.Where("category_id = ?", *filters.CategoryID)
+	}
+
+	if filters.From != nil {
+		query = query.Where("date >= ?", *filters.From)
+	}
+
+	if filters.To != nil {
+		query = query.Where("date <= ?", *filters.To)
+	}
+
+	if strings.TrimSpace(filters.SearchText) != "" {
+		searchTerm := "%" + strings.ToLower(strings.TrimSpace(filters.SearchText)) + "%"
+		query = query.Where("LOWER(note) LIKE ?", searchTerm)
+	}
+
+	return query
 }
