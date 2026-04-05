@@ -1,0 +1,737 @@
+openapi: 3.0.3
+info:
+  title: Finance API
+  version: 1.0.0
+  description: |
+    Backend API for finance tracking, role-based access control, record management,
+    and dashboard summaries.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+tags:
+  - name: Auth
+  - name: Records
+  - name: Dashboard
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Create a user account
+      description: Creates a new user with the default viewer role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: Signup successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '400':
+          description: Invalid request or duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many signup attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in a user
+      description: Authenticates the user and sets the token cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out the current user
+      description: Revokes the current JWT by adding it to the blacklist and clears the auth cookie.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusMessageResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /records/:
+    post:
+      tags: [Records]
+      summary: Create a financial record
+      description: Creates a new financial record for the authenticated user.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            maxLength: 255
+          description: Optional key to prevent duplicate record creation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecordRequest'
+      responses:
+        '200':
+          description: Record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialRecord'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Idempotency conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Records]
+      summary: List financial records
+      description: Returns a paginated list of the authenticated user's records with optional search and filtering.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Case-insensitive search on record notes.
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [income, expense]
+        - in: query
+          name: category_id
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Lower date bound, also accepts RFC3339 values in the implementation.
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: Upper date bound, also accepts RFC3339 values in the implementation.
+      responses:
+        '200':
+          description: Paginated record list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordListResponse'
+        '400':
+          description: Invalid query params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /records/{id}:
+    put:
+      tags: [Records]
+      summary: Update a financial record
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRecordRequest'
+      responses:
+        '200':
+          description: Updated record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialRecord'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Records]
+      summary: Soft delete a financial record
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Record deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '400':
+          description: Invalid record id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard summary
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummaryEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /dashboard/trends:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard trends
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [monthly, weekly]
+            default: monthly
+        - in: query
+          name: points
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+            default: 6
+      responses:
+        '200':
+          description: Trend response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendEnvelope'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Invalid request body
+    StatusMessageResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Logout successful
+    SignupRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          example: Kai User
+        email:
+          type: string
+          format: email
+          example: kai@example.com
+        password:
+          type: string
+          format: password
+          example: Password@123
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: kai@example.com
+        password:
+          type: string
+          format: password
+          example: Password@123
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 6
+        name:
+          type: string
+          example: Kai User
+        email:
+          type: string
+          format: email
+          example: kai@example.com
+        role_id:
+          type: integer
+          nullable: true
+          example: 1
+        active:
+          type: boolean
+          example: true
+        password_updated_at:
+          type: integer
+          format: int64
+          example: 1775378276
+    AuthSuccessResponse:
+      type: object
+      required: [status, message, user]
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Login successful
+        user:
+          $ref: '#/components/schemas/AuthUser'
+    CreateRecordRequest:
+      type: object
+      required: [amount, type, date]
+      properties:
+        amount:
+          type: number
+          format: double
+          example: 1250.75
+        type:
+          type: string
+          enum: [income, expense]
+        category_id:
+          type: integer
+          nullable: true
+          example: 1
+        date:
+          type: string
+          format: date-time
+          example: '2026-04-05T10:00:00Z'
+        note:
+          type: string
+          example: salary credit
+    UpdateRecordRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateRecordRequest'
+    FinancialRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        user_id:
+          type: integer
+          example: 6
+        amount:
+          type: number
+          format: double
+          example: 1250.75
+        type:
+          type: string
+          enum: [income, expense]
+        category_id:
+          type: integer
+          nullable: true
+          example: 1
+        date:
+          type: string
+          format: date-time
+          example: '2026-04-05T10:00:00Z'
+        note:
+          type: string
+          example: salary credit
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          nullable: true
+          example: null
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          format: int64
+          example: 42
+        total_pages:
+          type: integer
+          example: 3
+    RecordListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancialRecord'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    DeleteResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: deleted
+    CategoryTotal:
+      type: object
+      properties:
+        category_id:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+          example: Salary
+        type:
+          type: string
+          example: income
+        total:
+          type: number
+          format: double
+          example: 50000
+    RecentActivity:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: number
+          format: double
+        type:
+          type: string
+          example: expense
+        category_id:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+          example: Food
+        date:
+          type: string
+          format: date-time
+        note:
+          type: string
+          example: Lunch + groceries
+    TrendPoint:
+      type: object
+      properties:
+        period:
+          type: string
+          example: 2026-04
+        income:
+          type: number
+          format: double
+          example: 65000
+        expense:
+          type: number
+          format: double
+          example: 3400.5
+        net:
+          type: number
+          format: double
+          example: 61600.5
+    DashboardSummary:
+      type: object
+      properties:
+        total_income:
+          type: number
+          format: double
+        total_expenses:
+          type: number
+          format: double
+        net_balance:
+          type: number
+          format: double
+        category_totals:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryTotal'
+        recent_activity:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentActivity'
+        monthly_trends:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendPoint'
+        generated_at:
+          type: string
+          format: date-time
+    DashboardSummaryEnvelope:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/DashboardSummary'
+    TrendResponse:
+      type: object
+      properties:
+        period:
+          type: string
+          example: monthly
+        points:
+          type: integer
+          example: 6
+        trends:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendPoint'
+        generated_at:
+          type: string
+          format: date-time
+    TrendEnvelope:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/TrendResponse'

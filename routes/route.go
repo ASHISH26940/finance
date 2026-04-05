@@ -2,6 +2,7 @@ package routes
 
 import (
 	"finance/controllers"
+	"finance/docs"
 	"finance/middlewares"
 	"finance/models"
 
@@ -9,6 +10,7 @@ import (
 )
 
 func SetupRoutes(app *fiber.App) {
+	docs.Register(app)
 	app.Use(middlewares.GlobalRateLimit())
 
 	auth := app.Group("/auth")

@@ -49,6 +49,7 @@ routes/         route registration
 - request rate limiting
 - idempotency support for record creation
 - API documentation
+- OpenAPI and Swagger UI documentation
 - unit tests for core controller helper logic
 
 ## Core Requirements Coverage
@@ -173,6 +174,7 @@ Implemented from the optional list:
 - rate limiting
 - unit tests
 - API documentation
+- OpenAPI / Swagger documentation
 
 Additional thoughtfulness included:
 
@@ -203,6 +205,11 @@ Dashboard:
 Detailed request and response examples are documented in:
 
 [API.md](/home/kai/code/finance/docs/API.md)
+
+OpenAPI and Swagger are available at:
+
+- `GET /docs/openapi.yaml`
+- `GET /docs`
 
 An Insomnia collection is included here:
 

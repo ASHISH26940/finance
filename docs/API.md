@@ -4,6 +4,11 @@
 
 `http://localhost:3000`
 
+## OpenAPI / Swagger
+
+- OpenAPI spec: `GET /docs/openapi.yaml`
+- Swagger UI: `GET /docs`
+
 ## Authentication
 
 - Public endpoints:
