@@ -36,6 +36,10 @@ func (c *Category) GetByID(id uint64) error {
 	return database.Database.Db.First(c, id).Error
 }
 
+func (c *Category) GetByIDForUser(id, userID uint64) error {
+	return database.Database.Db.Where("id = ? AND (user_id = ? OR user_id IS NULL)", id, userID).First(c).Error
+}
+
 func (c *Category) GetAllByUser(userID uint64) ([]Category, error) {
 	var categories []Category
 	err := database.Database.Db.Where("user_id = ?", userID).Find(&categories).Error
@@ -86,6 +90,10 @@ func (r *FinancialRecord) Create() error {
 
 func (r *FinancialRecord) GetByID(id uint64) error {
 	return database.Database.Db.First(r, id).Error
+}
+
+func (r *FinancialRecord) GetByIDForUser(id, userID uint64) error {
+	return database.Database.Db.Where("id = ? AND user_id = ?", id, userID).First(r).Error
 }
 
 func (r *FinancialRecord) GetByUser(userID uint64, page, perPage int, filters RecordListFilters) (RecordListPage, error) {

@@ -3,6 +3,7 @@ package main
 import (
 	"finance/config"
 	"finance/database"
+	"finance/models"
 	"finance/routes"
 	"log"
 
@@ -16,6 +17,9 @@ func main() {
 	}
 
 	database.MySqlConnectDb(cfg)
+	if err := models.SeedRoles(); err != nil {
+		log.Fatal(err)
+	}
 	if err := database.RedisConnectDb(cfg); err != nil {
 		log.Printf("redis unavailable, falling back to in-memory storage where supported: %v", err)
 	}

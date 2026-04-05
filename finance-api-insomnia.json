@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2026-04-05T12:00:00.000Z",
+  "__export_date": "2026-04-05T12:30:00.000Z",
   "__export_source": "codex.finance",
   "resources": [
     {
@@ -19,6 +19,8 @@
         "base_url": "http://localhost:3000",
         "token": "",
         "record_id": "1",
+        "user_id": "1",
+        "role_id": "1",
         "records_page": "1",
         "records_per_page": "20",
         "records_search": "salary",
@@ -27,7 +29,11 @@
         "records_from": "2026-04-01",
         "records_to": "2026-04-30",
         "trend_period": "monthly",
-        "trend_points": "6"
+        "trend_points": "6",
+        "admin_user_name": "Kai Updated",
+        "admin_user_role_id": "2",
+        "admin_user_active": "true",
+        "admin_role_name": "supervisor"
       }
     },
     {
@@ -188,6 +194,13 @@
       "description": "Dashboard summary and trends"
     },
     {
+      "_id": "fld_admin",
+      "_type": "request_group",
+      "parentId": "wrk_finance_api",
+      "name": "Admin",
+      "description": "Protected user and role management"
+    },
+    {
       "_id": "req_dashboard_summary",
       "_type": "request",
       "parentId": "fld_dashboard",
@@ -209,6 +222,128 @@
       "method": "GET",
       "url": "{{ _.base_url }}/dashboard/trends?period={{ _.trend_period }}&points={{ _.trend_points }}",
       "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_admin_users_list",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "List Users",
+      "method": "GET",
+      "url": "{{ _.base_url }}/admin/users",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_admin_users_get",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "Get User",
+      "method": "GET",
+      "url": "{{ _.base_url }}/admin/users/{{ _.user_id }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_admin_users_update",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "Update User",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/admin/users/{{ _.user_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"{{ _.admin_user_name }}\",\n  \"role_id\": {{ _.admin_user_role_id }},\n  \"active\": {{ _.admin_user_active }}\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_admin_roles_list",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "List Roles",
+      "method": "GET",
+      "url": "{{ _.base_url }}/admin/roles",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_admin_roles_get",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "Get Role",
+      "method": "GET",
+      "url": "{{ _.base_url }}/admin/roles/{{ _.role_id }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_admin_roles_create",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "Create Role",
+      "method": "POST",
+      "url": "{{ _.base_url }}/admin/roles",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"{{ _.admin_role_name }}\",\n  \"permissions\": {\n    \"can_view_dashboard\": true,\n    \"can_view_records\": true,\n    \"can_view_insights\": true,\n    \"can_create_records\": false,\n    \"can_update_records\": false,\n    \"can_delete_records\": false,\n    \"can_manage_users\": false\n  }\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_admin_roles_update",
+      "_type": "request",
+      "parentId": "fld_admin",
+      "name": "Update Role",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/admin/roles/{{ _.role_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"{{ _.admin_role_name }}\",\n  \"permissions\": {\n    \"can_view_dashboard\": true,\n    \"can_view_records\": true,\n    \"can_view_insights\": true,\n    \"can_create_records\": true,\n    \"can_update_records\": true,\n    \"can_delete_records\": false,\n    \"can_manage_users\": false\n  }\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
         {
           "name": "Authorization",
           "value": "Bearer {{ _.token }}"

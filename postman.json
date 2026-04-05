@@ -1,11 +1,174 @@
 {
   "info": {
-    "name": "Finance Backend",
-    "_postman_id": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-    "description": "Finance API Collection",
+    "_postman_id": "5f3ff66c-c4ad-4a65-88ef-2d9f80e57c5d",
+    "name": "Finance API",
+    "description": "Routes for auth, records, dashboard, and admin testing",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "record_id",
+      "value": "1"
+    },
+    {
+      "key": "user_id",
+      "value": "1"
+    },
+    {
+      "key": "role_id",
+      "value": "1"
+    },
+    {
+      "key": "records_page",
+      "value": "1"
+    },
+    {
+      "key": "records_per_page",
+      "value": "20"
+    },
+    {
+      "key": "records_search",
+      "value": "salary"
+    },
+    {
+      "key": "records_type",
+      "value": "income"
+    },
+    {
+      "key": "records_category_id",
+      "value": "1"
+    },
+    {
+      "key": "records_from",
+      "value": "2026-04-01"
+    },
+    {
+      "key": "records_to",
+      "value": "2026-04-30"
+    },
+    {
+      "key": "trend_period",
+      "value": "monthly"
+    },
+    {
+      "key": "trend_points",
+      "value": "6"
+    },
+    {
+      "key": "admin_user_name",
+      "value": "Kai Updated"
+    },
+    {
+      "key": "admin_user_role_id",
+      "value": "2"
+    },
+    {
+      "key": "admin_user_active",
+      "value": "true"
+    },
+    {
+      "key": "admin_role_name",
+      "value": "supervisor"
+    }
+  ],
   "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kai User\",\n  \"email\": \"kai@example.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kai@example.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        }
+      ]
+    },
     {
       "name": "Records",
       "item": [
@@ -14,35 +177,117 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 1000,\n  \"type\": \"income\",\n  \"category_id\": 1,\n  \"date\": \"2026-04-05T10:00:00Z\",\n  \"note\": \"Test income\"\n}"
+              "raw": "{\n  \"amount\": 1250.75,\n  \"type\": \"income\",\n  \"category_id\": null,\n  \"date\": \"2026-04-05T10:00:00Z\",\n  \"note\": \"salary credit\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "http://localhost:3000/records",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "3000",
-              "path": ["records"]
+              "raw": "{{base_url}}/records/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "records",
+                ""
+              ]
             }
           }
         },
         {
-          "name": "Get Records",
+          "name": "Get Records Paginated",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
-              "raw": "http://localhost:3000/records",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "3000",
-              "path": ["records"]
+              "raw": "{{base_url}}/records/?page={{records_page}}&per_page={{records_per_page}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "records",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{records_page}}"
+                },
+                {
+                  "key": "per_page",
+                  "value": "{{records_per_page}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/records/?page={{records_page}}&per_page={{records_per_page}}&search={{records_search}}&type={{records_type}}&category_id={{records_category_id}}&from={{records_from}}&to={{records_to}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "records",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{records_page}}"
+                },
+                {
+                  "key": "per_page",
+                  "value": "{{records_per_page}}"
+                },
+                {
+                  "key": "search",
+                  "value": "{{records_search}}"
+                },
+                {
+                  "key": "type",
+                  "value": "{{records_type}}"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{records_category_id}}"
+                },
+                {
+                  "key": "from",
+                  "value": "{{records_from}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{records_to}}"
+                }
+              ]
             }
           }
         },
@@ -51,19 +296,33 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 2000,\n  \"note\": \"Updated note\"\n}"
+              "raw": "{\n  \"amount\": 999.99,\n  \"type\": \"expense\",\n  \"category_id\": null,\n  \"date\": \"2026-04-05T12:00:00Z\",\n  \"note\": \"updated from postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "http://localhost:3000/records/1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "3000",
-              "path": ["records", "1"]
+              "raw": "{{base_url}}/records/{{record_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "records",
+                "{{record_id}}"
+              ]
             }
           }
         },
@@ -72,14 +331,281 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer YOUR_TOKEN" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "url": {
-              "raw": "http://localhost:3000/records/1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "3000",
-              "path": ["records", "1"]
+              "raw": "{{base_url}}/records/{{record_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "records",
+                "{{record_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Trends",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/trends?period={{trend_period}}&points={{trend_points}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "trends"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "{{trend_period}}"
+                },
+                {
+                  "key": "points",
+                  "value": "{{trend_points}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "{{user_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{admin_user_name}}\",\n  \"role_id\": {{admin_user_role_id}},\n  \"active\": {{admin_user_active}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "{{user_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Role",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "roles",
+                "{{role_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{admin_role_name}}\",\n  \"permissions\": {\n    \"can_view_dashboard\": true,\n    \"can_view_records\": true,\n    \"can_view_insights\": true,\n    \"can_create_records\": false,\n    \"can_update_records\": false,\n    \"can_delete_records\": false,\n    \"can_manage_users\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{admin_role_name}}\",\n  \"permissions\": {\n    \"can_view_dashboard\": true,\n    \"can_view_records\": true,\n    \"can_view_insights\": true,\n    \"can_create_records\": true,\n    \"can_update_records\": true,\n    \"can_delete_records\": false,\n    \"can_manage_users\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "roles",
+                "{{role_id}}"
+              ]
             }
           }
         }

@@ -9,9 +9,9 @@ import (
 type RoleName string
 
 const (
-	RoleViewer RoleName="viewer"
-	RoleAnalyst RoleName="analyst"
-	RoleAdmin RoleName="admin"
+	RoleViewer  RoleName = "viewer"
+	RoleAnalyst RoleName = "analyst"
+	RoleAdmin   RoleName = "admin"
 )
 
 type Permission struct {
@@ -32,38 +32,44 @@ type Role struct {
 	UpdatedAt   time.Time `gorm:"column:last_modified;autoUpdateTime"`
 }
 
-func (r *Role) Create() error{
+func (r *Role) Create() error {
 	return database.Database.Db.Create(r).Error
 }
 
-func (r *Role) GetById(id uint) error{
-	return database.Database.Db.First(r,id).Error
+func (r *Role) GetById(id uint) error {
+	return database.Database.Db.First(r, id).Error
 }
 
-func (r *Role) GetByName(name string) error{
-	return database.Database.Db.Where("name = ?",name).First(r).Error
+func (r *Role) GetByName(name string) error {
+	return database.Database.Db.Where("name = ?", name).First(r).Error
 }
 
-func (r *Role) Update() error{
+func (r *Role) List() ([]Role, error) {
+	var roles []Role
+	err := database.Database.Db.Order("id ASC").Find(&roles).Error
+	return roles, err
+}
+
+func (r *Role) Update() error {
 	return database.Database.Db.Save(r).Error
 }
 
-func (r *Role) Delete() error{
+func (r *Role) Delete() error {
 	return database.Database.Db.Delete(r).Error
 }
 
-func (r *Role) GetPermissions()(Permission,error){
+func (r *Role) GetPermissions() (Permission, error) {
 	var perm Permission
 
-	if r.Permissions==""{
-		return perm,nil
+	if r.Permissions == "" {
+		return perm, nil
 	}
 
-	err:=json.Unmarshal([]byte(r.Permissions),&perm)
-	return perm,err
+	err := json.Unmarshal([]byte(r.Permissions), &perm)
+	return perm, err
 }
 
-func SeedRoles()error{
+func SeedRoles() error {
 	roles := []struct {
 		Name RoleName
 		Perm Permission
@@ -96,15 +102,15 @@ func SeedRoles()error{
 		},
 	}
 
-	for _,r:=range roles{
-		bytes,_:=json.Marshal(r.Perm)
+	for _, r := range roles {
+		bytes, _ := json.Marshal(r.Perm)
 
-		role:=Role{
-			Name: string(r.Name),
+		role := Role{
+			Name:        string(r.Name),
 			Permissions: string(bytes),
 		}
 
-		if err:=database.Database.Db.Where("name=?",r.Name).FirstOrCreate(&role).Error;err!=nil{
+		if err := database.Database.Db.Where("name=?", r.Name).FirstOrCreate(&role).Error; err != nil {
 			return err
 		}
 	}

@@ -28,6 +28,16 @@ func SetupRoutes(app *fiber.App) {
 		controllers.GetDashboardTrends,
 	)
 
+	admin := app.Group("/admin", middlewares.Protected())
+	admin.Use(middlewares.Authorize(func(p models.Permission) bool { return p.CanManageUsers }))
+	admin.Get("/users", controllers.ListUsers)
+	admin.Get("/users/:id", controllers.GetUser)
+	admin.Put("/users/:id", controllers.UpdateUser)
+	admin.Get("/roles", controllers.ListRoles)
+	admin.Get("/roles/:id", controllers.GetRole)
+	admin.Post("/roles", controllers.CreateRole)
+	admin.Put("/roles/:id", controllers.UpdateRole)
+
 	r := app.Group("/records", middlewares.Protected())
 
 	r.Post("/",
