@@ -1,0 +1,184 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-04-05T00:00:00.000Z",
+  "__export_source": "codex.finance",
+  "resources": [
+    {
+      "_id": "wrk_finance_api",
+      "_type": "workspace",
+      "name": "Finance API",
+      "description": "Routes for auth, records, and dashboard testing"
+    },
+    {
+      "_id": "env_finance_base",
+      "_type": "environment",
+      "parentId": "wrk_finance_api",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3000",
+        "token": "",
+        "record_id": "1",
+        "trend_period": "monthly",
+        "trend_points": "6"
+      }
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_finance_api",
+      "name": "Auth",
+      "description": "Signup/Login"
+    },
+    {
+      "_id": "req_auth_signup",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Signup",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/signup",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Kai User\",\n  \"email\": \"kai@example.com\",\n  \"password\": \"Password@123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_auth_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"kai@example.com\",\n  \"password\": \"Password@123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "fld_records",
+      "_type": "request_group",
+      "parentId": "wrk_finance_api",
+      "name": "Records",
+      "description": "Protected record CRUD"
+    },
+    {
+      "_id": "req_records_create",
+      "_type": "request",
+      "parentId": "fld_records",
+      "name": "Create Record",
+      "method": "POST",
+      "url": "{{ _.base_url }}/records/",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"amount\": 1250.75,\n  \"type\": \"income\",\n  \"category_id\": null,\n  \"date\": \"2026-04-05T10:00:00Z\",\n  \"note\": \"salary credit\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_records_get",
+      "_type": "request",
+      "parentId": "fld_records",
+      "name": "Get Records",
+      "method": "GET",
+      "url": "{{ _.base_url }}/records/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_records_update",
+      "_type": "request",
+      "parentId": "fld_records",
+      "name": "Update Record",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/records/{{ _.record_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"amount\": 999.99,\n  \"type\": \"expense\",\n  \"category_id\": null,\n  \"date\": \"2026-04-05T12:00:00Z\",\n  \"note\": \"updated from insomnia\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_records_delete",
+      "_type": "request",
+      "parentId": "fld_records",
+      "name": "Delete Record",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/records/{{ _.record_id }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "fld_dashboard",
+      "_type": "request_group",
+      "parentId": "wrk_finance_api",
+      "name": "Dashboard",
+      "description": "Dashboard summary and trends"
+    },
+    {
+      "_id": "req_dashboard_summary",
+      "_type": "request",
+      "parentId": "fld_dashboard",
+      "name": "Dashboard Summary",
+      "method": "GET",
+      "url": "{{ _.base_url }}/dashboard/summary",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_dashboard_trends",
+      "_type": "request",
+      "parentId": "fld_dashboard",
+      "name": "Dashboard Trends",
+      "method": "GET",
+      "url": "{{ _.base_url }}/dashboard/trends?period={{ _.trend_period }}&points={{ _.trend_points }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ]
+    }
+  ]
+}

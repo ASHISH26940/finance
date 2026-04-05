@@ -1,0 +1,19 @@
+# Environment files
+.env
+.env.*
+*.env
+.air.toml
+
+# Temp files and directories
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+
