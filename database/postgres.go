@@ -12,6 +12,13 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+
+type MysqlDbInstance struct{
+	Db *gorm.DB
+}
+
+var Database MysqlDbInstance
+
 func PostgresConnectDb(config *config.Configuration) {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
