@@ -38,6 +38,8 @@ func LoadConfig(path string)(*Configuration,error){
 	viper.AddConfigPath(path)
 	viper.SetConfigFile("env")
 	viper.SetConfigName("app")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("/opt/render/project/go/src/github.com/ASHISH26940/finance")
 
 	viper.AutomaticEnv()
 

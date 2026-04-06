@@ -19,16 +19,22 @@ func RedisConnectDb(config *config.Configuration) error {
 		return nil
 	}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr:         config.RedisUrl,
-		Password:     config.RedisPass, // no password set
-		DB:           0,                // use default DB
-		ReadTimeout:  0,
-		WriteTimeout: 0,
-		DialTimeout:  0,
-		PoolSize:     200,
-		MinIdleConns: 50,
-	})
+	opts, err := redis.ParseURL(config.RedisUrl)
+	if err != nil {
+		return err
+	}
+
+	if strings.TrimSpace(config.RedisPass) != "" {
+		opts.Password = config.RedisPass
+	}
+
+	opts.ReadTimeout = 0
+	opts.WriteTimeout = 0
+	opts.DialTimeout = 0
+	opts.PoolSize = 200
+	opts.MinIdleConns = 50
+
+	rdb := redis.NewClient(opts)
 
 	pong, err := rdb.Ping().Result()
 	if err != nil {

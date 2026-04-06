@@ -16,7 +16,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	database.MySqlConnectDb(cfg)
+	database.PostgresConnectDb(cfg)
 	if err := models.SeedRoles(); err != nil {
 		log.Fatal(err)
 	}
