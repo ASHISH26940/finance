@@ -13,11 +13,11 @@ import (
 )
 
 
-type MysqlDbInstance struct{
+type PostgresDbInstance struct{
 	Db *gorm.DB
 }
 
-var Database MysqlDbInstance
+var Database PostgresDbInstance
 
 func PostgresConnectDb(config *config.Configuration) {
 	dsn := os.Getenv("DATABASE_URL")
@@ -45,7 +45,7 @@ func PostgresConnectDb(config *config.Configuration) {
 		db.Logger = logger.Default.LogMode(logger.Error)
 	}
 
-	Database = MysqlDbInstance{Db: db}
+	Database = PostgresDbInstance{Db: db}
 
 	sqlDB, err := Database.Db.DB()
 	if err != nil {
