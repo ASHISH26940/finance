@@ -11,25 +11,29 @@
 
 ## Authentication
 
-- Public endpoints:
-1. `POST /auth/signup`
-2. `POST /auth/login`
+Public endpoints:
 
-- Protected endpoints require a valid JWT:
-1. Cookie: `token` (set by login/signup)
-2. Header: `Authorization: Bearer <token>`
-3. `POST /auth/logout` revokes the current JWT by blacklisting it until its normal expiry time.
+- `POST /auth/signup`
+- `POST /auth/login`
 
-## Role Permissions
+Protected endpoints accept either:
 
-Permissions are evaluated from `roles.permissions` JSON.
+- cookie: `token`
+- header: `Authorization: Bearer <token>`
 
-- `CanViewDashboard` required for `GET /dashboard/summary`
-- `CanViewInsights` required for `GET /dashboard/trends`
-- `CanViewRecords` required for `GET /records/`
-- `CanCreateRecords` required for `POST /records/`
-- `CanUpdateRecords` required for `PUT /records/:id`
-- `CanDeleteRecords` required for `DELETE /records/:id`
+`POST /auth/logout` revokes the current JWT by blacklisting it until expiry.
+
+## Permissions
+
+Permissions are read from `roles.permissions`.
+
+- `can_view_dashboard` for `GET /dashboard/summary`
+- `can_view_insights` for `GET /dashboard/trends`
+- `can_view_records` for `GET /records/`
+- `can_create_records` for `POST /records/`
+- `can_update_records` for `PUT /records/:id`
+- `can_delete_records` for `DELETE /records/:id`
+- `can_manage_users` for all `/admin/*` routes
 
 ## Standard Error Shape
 
@@ -42,20 +46,20 @@ Permissions are evaluated from `roles.permissions` JSON.
 
 ## Request Guards
 
-- Global API rate limit: `120` requests per IP per minute for non-auth routes.
-- `POST /auth/login`: `10` requests per IP per 10 minutes.
-- `POST /auth/signup`: `5` requests per IP per 15 minutes.
-- `POST /records/` supports the `Idempotency-Key` header.
-- Reusing an `Idempotency-Key` with the same authenticated user and identical request body returns the cached response for 24 hours.
-- Reusing the same `Idempotency-Key` with a different request body returns `409 Conflict`.
+- Global API rate limit: `120` requests per IP per minute for non-auth routes
+- `POST /auth/login`: `10` requests per IP per 10 minutes
+- `POST /auth/signup`: `5` requests per IP per 15 minutes
+- `POST /records/` supports `Idempotency-Key`
+- Reusing an idempotency key with the same user and same payload returns the cached response for 24 hours
+- Reusing the same key with a different payload returns `409 Conflict`
 
 ---
 
-## Auth APIs
+## Auth Endpoints
 
 ### POST `/auth/signup`
 
-Creates a new user with default `viewer` role.
+Creates a user and assigns the default `viewer` role.
 
 Request body:
 
@@ -84,16 +88,15 @@ Success response (`201`):
 }
 ```
 
-Possible errors:
+Common errors:
 
-- `400` invalid body/required fields/password length
-- `400` duplicate email
+- `400` invalid body, missing required fields, short password, duplicate email
 - `429` too many attempts
-- `500` secret/server issues
+- `500` hashing, role lookup, or server config failure
 
 ### POST `/auth/login`
 
-Authenticates user and sets `token` cookie.
+Authenticates a user and sets the `token` cookie.
 
 Request body:
 
@@ -121,17 +124,15 @@ Success response (`200`):
 }
 ```
 
-Possible errors:
+Common errors:
 
-- `400` invalid body
+- `400` invalid body or missing credentials
 - `401` invalid credentials
 - `429` too many attempts
 
 ### POST `/auth/logout`
 
 Revokes the current JWT and clears the `token` cookie.
-
-Requires a valid JWT in either the auth cookie or `Authorization` header.
 
 Success response (`200`):
 
@@ -144,19 +145,18 @@ Success response (`200`):
 
 Notes:
 
-- The current JWT is added to the blacklist in Redis when Redis is available.
-- If Redis is unavailable, blacklist state falls back to in-memory storage.
-- A blacklisted token is rejected by protected routes even if it has not reached its normal `exp` time yet.
+- blacklist storage uses Redis when available
+- if Redis is unavailable, supported blacklist behavior falls back to in-memory storage
 
 ---
 
-## Record APIs
+## Record Endpoints
 
 ### POST `/records/`
 
-Creates a financial record for authenticated user.
+Creates a financial record for the authenticated user.
 
-Permission: `CanCreateRecords`
+Permission: `can_create_records`
 
 Request body:
 
@@ -170,36 +170,58 @@ Request body:
 }
 ```
 
-Optional headers:
+Optional header:
 
 ```http
 Idempotency-Key: create-record-001
 ```
 
-Success response (`200`): created record object.
+Success response (`200`):
 
-Notes:
+```json
+{
+  "id": 12,
+  "user_id": 6,
+  "amount": 1250.75,
+  "type": "income",
+  "category_id": 1,
+  "date": "2026-04-05T10:00:00Z",
+  "note": "salary credit",
+  "created_at": "2026-04-05T10:01:00Z",
+  "updated_at": "2026-04-05T10:01:00Z",
+  "deleted_at": null
+}
+```
 
-- `date` must be RFC3339 format.
-- `category_id` can be `null`.
-- A matching `Idempotency-Key` replays the original response instead of creating a duplicate record.
-- A duplicate request arriving while the original one is still running returns `409`.
+Common errors:
 
-### GET `/records/?page=1&per_page=20`
+- `400` invalid body, invalid type, invalid category, invalid date, non-positive amount
+- `401` missing or invalid token
+- `403` permission denied
+- `409` idempotency conflict
+- `500` server or database error
 
-Returns a paginated list of records for the authenticated user, with optional search and filtering.
+### GET `/records/`
 
-Permission: `CanViewRecords`
+Returns paginated records for the authenticated user.
+
+Permission: `can_view_records`
 
 Query params:
 
-- `page` optional, defaults to `1`
-- `per_page` optional, defaults to `20`, max `100`
-- `search` optional, performs case-insensitive text search on record notes
-- `type` optional, accepts `income` or `expense`
-- `category_id` optional, filters by category ID
-- `from` optional, lower bound for record date, accepts `YYYY-MM-DD` or RFC3339
-- `to` optional, upper bound for record date, accepts `YYYY-MM-DD` or RFC3339
+- `page` optional, default `1`
+- `per_page` optional, default `20`, max `100`
+- `search` optional
+- `type` optional, `income` or `expense`
+- `category_id` optional
+- `from` optional, `YYYY-MM-DD` or RFC3339
+- `to` optional, `YYYY-MM-DD` or RFC3339
+
+Example:
+
+```http
+GET /records/?page=1&per_page=10&search=salary&type=income&category_id=1&from=2026-04-01&to=2026-04-30
+```
 
 Success response (`200`):
 
@@ -229,25 +251,33 @@ Success response (`200`):
 }
 ```
 
-Example:
-
-```http
-GET /records/?page=1&per_page=10&search=salary&type=income&category_id=1&from=2026-04-01&to=2026-04-30
-```
-
 ### PUT `/records/:id`
 
-Updates an existing record by ID.
+Updates a record owned by the authenticated user.
 
-Permission: `CanUpdateRecords`
+Permission: `can_update_records`
 
-Body: record fields (same shape as create model).
+Request body:
+
+```json
+{
+  "amount": 1500.25,
+  "type": "income",
+  "category_id": 1,
+  "date": "2026-04-06T10:00:00Z",
+  "note": "updated note"
+}
+```
+
+All fields are optional, but at least one must be provided.
+
+Success response (`200`): updated record object.
 
 ### DELETE `/records/:id`
 
-Soft deletes a record by ID.
+Soft deletes a record owned by the authenticated user.
 
-Permission: `CanDeleteRecords`
+Permission: `can_delete_records`
 
 Success response (`200`):
 
@@ -257,27 +287,19 @@ Success response (`200`):
 }
 ```
 
-Common errors for record APIs:
+Notes:
 
-- `401` missing/invalid token
-- `403` permission denied
-- `404` record not found
-- `500` server/database error
-
-Soft delete behavior:
-
-- Soft-deleted records are excluded from `GET /records/`.
-- Soft-deleted records are excluded from dashboard totals, recent activity, and trends.
+- soft-deleted records are excluded from record listings and dashboard calculations
 
 ---
 
-## Dashboard APIs
+## Dashboard Endpoints
 
 ### GET `/dashboard/summary`
 
-Aggregated summary for current user.
+Returns aggregated dashboard data for the authenticated user.
 
-Permission: `CanViewDashboard`
+Permission: `can_view_dashboard`
 
 Success response (`200`):
 
@@ -320,16 +342,22 @@ Success response (`200`):
 }
 ```
 
-### GET `/dashboard/trends?period=monthly&points=6`
+### GET `/dashboard/trends`
 
-Returns trend-only series.
+Returns trend-only data for the authenticated user.
 
-Permission: `CanViewInsights`
+Permission: `can_view_insights`
 
 Query params:
 
-- `period`: `monthly` (default) or `weekly`
-- `points`: positive integer, max `24` (default `6`)
+- `period` optional, `monthly` or `weekly`, default `monthly`
+- `points` optional, positive integer, max `24`, default `6`
+
+Example:
+
+```http
+GET /dashboard/trends?period=monthly&points=6
+```
 
 Success response (`200`):
 
@@ -354,15 +382,143 @@ Success response (`200`):
 
 ---
 
+## Admin Endpoints
+
+All admin routes require authentication plus `can_manage_users`.
+
+### GET `/admin/users`
+
+Returns all users.
+
+Success response (`200`):
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "name": "Kai User",
+      "email": "kai@example.com",
+      "role_id": 1,
+      "active": true,
+      "created_at": "2026-04-05T10:00:00Z",
+      "updated_at": "2026-04-05T10:00:00Z"
+    }
+  ]
+}
+```
+
+### GET `/admin/users/:id`
+
+Returns one user by ID.
+
+### PUT `/admin/users/:id`
+
+Updates user fields.
+
+Request body:
+
+```json
+{
+  "name": "Updated User",
+  "role_id": 2,
+  "active": true
+}
+```
+
+All fields are optional, but at least one is required.
+
+### GET `/admin/roles`
+
+Returns all roles.
+
+Success response (`200`):
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "name": "viewer",
+      "permissions": {
+        "can_view_dashboard": true,
+        "can_view_records": false,
+        "can_view_insights": false,
+        "can_create_records": false,
+        "can_update_records": false,
+        "can_delete_records": false,
+        "can_manage_users": false
+      }
+    }
+  ]
+}
+```
+
+### GET `/admin/roles/:id`
+
+Returns one role by ID.
+
+### POST `/admin/roles`
+
+Creates a new role.
+
+Request body:
+
+```json
+{
+  "name": "auditor",
+  "permissions": {
+    "can_view_dashboard": true,
+    "can_view_records": true,
+    "can_view_insights": true,
+    "can_create_records": false,
+    "can_update_records": false,
+    "can_delete_records": false,
+    "can_manage_users": false
+  }
+}
+```
+
+Success response (`201`): created role object.
+
+### PUT `/admin/roles/:id`
+
+Updates a role name and permissions.
+
+Request body:
+
+```json
+{
+  "name": "analyst",
+  "permissions": {
+    "can_view_dashboard": true,
+    "can_view_records": true,
+    "can_view_insights": true,
+    "can_create_records": false,
+    "can_update_records": false,
+    "can_delete_records": false,
+    "can_manage_users": false
+  }
+}
+```
+
+Common admin errors:
+
+- `400` invalid body, invalid ID, missing fields, duplicate role name
+- `401` missing or invalid token
+- `403` permission denied
+- `404` user or role not found
+- `500` server or database error
+
+---
+
 ## Testing with Insomnia
 
-Use either export file:
+Use [finance-api-insomnia.json](/home/kai/code/finance/finance-api-insomnia.json) to test the current routes:
 
-1. `finance-api-insomnia.json`
-2. `insomnia/finance-api-insomnia.json`
-
-These include all current routes:
-
-1. Auth (`signup`, `login`)
-2. Records CRUD
-3. Dashboard summary/trends
+- auth
+- records
+- dashboard
+- admin
