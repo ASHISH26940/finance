@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -10,15 +9,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-
-type Configuration struct{
-	DBHost string `mapstructure:"DB_HOST"`
-	DBPort string `mapstructure:"DB_PORT"`
-	DBName string `mapstructure:"DB_NAME"`
+type Configuration struct {
+	DBHost     string `mapstructure:"DB_HOST"`
+	DBPort     string `mapstructure:"DB_PORT"`
+	DBName     string `mapstructure:"DB_NAME"`
 	DBPassword string `mapstructure:"DB_PASSWORD"`
 	DBUsername string `mapstructure:"DB_USER"`
 
-	RedisUrl string `mapstructure:"REDIS_URL"`
+	RedisUrl  string `mapstructure:"REDIS_URL"`
 	RedisPass string `mapstructure:"REDIS_PASS"`
 
 	Secret string `mapstructure:"SECRET"`
@@ -26,66 +24,68 @@ type Configuration struct{
 
 var GlobalConfig *Configuration
 
-func LoadConfig(path string)(*Configuration,error){
-	if os.Getenv("FN_ENV")=="PROD"{
-		c,err:=LoadConfigLoad()
-		if err!=nil{
-			return nil,err
-		}
-		GlobalConfig=c
-		return GlobalConfig,nil
-	}
-	viper.AddConfigPath(path)
-	viper.SetConfigFile("env")
+func LoadConfig(path string) (*Configuration, error) {
+	c := Configuration{}
+
 	viper.SetConfigName("app")
+	viper.SetConfigType("env")
+	viper.AddConfigPath(path)
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("/opt/render/project/go/src/github.com/ASHISH26940/finance")
 
 	viper.AutomaticEnv()
 
-	err:=viper.ReadInConfig()
-	if err!=nil{
-		return nil,err
+	// 🔥 ignore error → Render has no config file
+	_ = viper.ReadInConfig()
+
+	// try env first (Render)
+	envCfg, _ := loadFromEnv()
+	if envCfg != nil {
+		GlobalConfig = envCfg
+		return GlobalConfig, nil
 	}
 
-	err=viper.Unmarshal(&GlobalConfig)
-	if err!=nil{
-		return nil,err
+	// fallback to file (local)
+	if err := viper.Unmarshal(&c); err != nil {
+		return nil, err
 	}
 
-	return GlobalConfig,nil
+	GlobalConfig = &c
+	return GlobalConfig, nil
 }
 
-func LoadConfigLoad()(*Configuration,error){
-	c:=Configuration{}
+func loadFromEnv() (*Configuration, error) {
+	c := Configuration{}
 
-	v:=reflect.ValueOf(&c).Elem()
-	t:=v.Type()
+	v := reflect.ValueOf(&c).Elem()
+	t := v.Type()
 
-	for i:=0;i<t.NumField();i++{
-		field:=t.Field(i)
-		fieldValue:=v.Field(i)
+	found := false
 
-		if !fieldValue.CanSet(){
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		fieldValue := v.Field(i)
+
+		if !fieldValue.CanSet() {
 			continue
 		}
 
-		envVar:=field.Tag.Get("mapstructure")
-		if envVar==""{
+		envVar := field.Tag.Get("mapstructure")
+		if envVar == "" {
 			continue
 		}
 
-		envValue:=os.Getenv(envVar)
-		if envValue==""{
-			log.Print("Warning:cant find this env in enviroment",envVar)
+		envValue := os.Getenv(envVar)
+		if envValue == "" {
 			continue
 		}
 
-		switch fieldValue.Kind(){
+		found = true
+
+		switch fieldValue.Kind() {
 		case reflect.String:
 			fieldValue.SetString(envValue)
 		case reflect.Bool:
-			if val,err:=strconv.ParseBool(envValue);err==nil{
+			if val, err := strconv.ParseBool(envValue); err == nil {
 				fieldValue.SetBool(val)
 			}
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -101,9 +101,13 @@ func LoadConfigLoad()(*Configuration,error){
 				fieldValue.SetFloat(val)
 			}
 		default:
-			return nil,fmt.Errorf("unsupported field type %s for the feild %s",fieldValue.Kind(),field.Name)
+			return nil, fmt.Errorf("unsupported field type %s for field %s", fieldValue.Kind(), field.Name)
 		}
 	}
 
-	return &c,nil
+	if !found {
+		return nil, nil
+	}
+
+	return &c, nil
 }
