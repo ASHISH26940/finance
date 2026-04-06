@@ -16,15 +16,15 @@ This project was built to demonstrate:
 - Go
 - Fiber
 - GORM
-- MySQL
-- Redis
+- PostgreSQL (Supabase)
+- Redis (Upstash)
 
 ## Project Structure
 
 ```text
 config/         configuration loading
 controllers/    request handlers
-database/       MySQL and Redis connection setup
+database/       PostgreSQL and Redis connection setup
 docs/           API documentation
 logic/          shared logic helpers
 middlewares/    auth, RBAC, rate limiting, idempotency
@@ -152,16 +152,16 @@ Implemented:
 
 Persistence choice:
 
-- MySQL is used as the main relational database
+- PostgreSQL on Supabase is used as the main relational database
 - Redis is used for token blacklist and idempotency storage when available
 - if Redis is unavailable, supported features fall back to in-memory storage where implemented
 
 Schema is managed through SQL files in:
 
-- `migrations/roles.sql`
-- `migrations/users.sql`
-- `migrations/categories.sql`
-- `migrations/financial.sql`
+- `migrations/postgres/roles.sql`
+- `migrations/postgres/users.sql`
+- `migrations/postgres/categories.sql`
+- `migrations/postgres/financial.sql`
 
 ## Optional Enhancements Implemented
 
@@ -220,7 +220,7 @@ An Insomnia collection is included here:
 ### 1. Prerequisites
 
 - Go installed
-- MySQL running
+- PostgreSQL database running
 - Redis running
 
 ### 2. Configuration
@@ -234,6 +234,8 @@ Relevant values include:
 - `DB_NAME`
 - `DB_USER`
 - `DB_PASSWORD`
+- `DB_SSLMODE`
+- `DATABASE_URL`
 - `REDIS_URL`
 - `REDIS_PASS`
 - `SECRET`
@@ -241,7 +243,7 @@ Relevant values include:
 
 ### 3. Run Migrations
 
-Execute the SQL files in `migrations/` against your MySQL database.
+Execute the SQL files in `migrations/postgres/` against your PostgreSQL database.
 
 ### 4. Start the App
 
@@ -304,9 +306,9 @@ Tradeoff:
 
 - Fiber introduces framework dependency, while `net/http` stays closer to the standard library
 
-### GORM with MySQL instead of raw SQL everywhere
+### GORM with PostgreSQL instead of raw SQL everywhere
 
-I chose GORM for the application data layer because it speeds up CRUD work and keeps model-related logic centralized.
+I chose GORM with PostgreSQL for the application data layer because it speeds up CRUD work and keeps model-related logic centralized.
 
 Why this:
 
@@ -322,6 +324,25 @@ Why not raw SQL everywhere:
 Tradeoff:
 
 - some queries are less explicit than handwritten SQL
+
+### Supabase PostgreSQL and hosted Redis instead of managing AWS database infrastructure
+
+I chose Supabase for PostgreSQL and hosted Redis for cache-like features because it kept the project practical and affordable without adding AWS infrastructure cost and ops overhead.
+
+Why this:
+
+- faster setup for a portfolio-style backend
+- managed Postgres and Redis reduce infrastructure work
+- lower cost than spinning up comparable AWS services for this project
+
+Why not self-manage on AWS:
+
+- AWS is powerful and flexible
+- but for this project it would be more expensive and add more deployment and networking setup than needed
+
+Tradeoff:
+
+- managed platform connection details and network constraints need to be handled carefully during deployment
 
 ### JWT authentication instead of server sessions
 
