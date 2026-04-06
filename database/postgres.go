@@ -4,7 +4,7 @@ import (
 	"finance/config"
 	"fmt"
 	"log"
-	"os"
+	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -12,24 +12,33 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-
-type PostgresDbInstance struct{
+type PostgresDbInstance struct {
 	Db *gorm.DB
 }
 
 var Database PostgresDbInstance
 
 func PostgresConnectDb(config *config.Configuration) {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
+	sslMode := strings.TrimSpace(config.DBSSLMode)
+	if sslMode == "" {
+		sslMode = "require"
+	}
+
+	dsn := ""
+	if strings.TrimSpace(config.DBHost) != "" {
 		dsn = fmt.Sprintf(
-			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Kolkata",
+			"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=Asia/Kolkata",
 			config.DBHost,
 			config.DBUsername,
 			config.DBPassword,
 			config.DBName,
 			config.DBPort,
+			sslMode,
 		)
+	} else if strings.TrimSpace(config.DatabaseURL) != "" {
+		dsn = config.DatabaseURL
+	} else {
+		log.Fatal("database configuration missing: set DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME or DATABASE_URL")
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

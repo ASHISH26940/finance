@@ -10,11 +10,13 @@ import (
 )
 
 type Configuration struct {
-	DBHost     string `mapstructure:"DB_HOST"`
-	DBPort     string `mapstructure:"DB_PORT"`
-	DBName     string `mapstructure:"DB_NAME"`
-	DBPassword string `mapstructure:"DB_PASSWORD"`
-	DBUsername string `mapstructure:"DB_USER"`
+	DBHost      string `mapstructure:"DB_HOST"`
+	DBPort      string `mapstructure:"DB_PORT"`
+	DBName      string `mapstructure:"DB_NAME"`
+	DBPassword  string `mapstructure:"DB_PASSWORD"`
+	DBUsername  string `mapstructure:"DB_USER"`
+	DBSSLMode   string `mapstructure:"DB_SSLMODE"`
+	DatabaseURL string `mapstructure:"DATABASE_URL"`
 
 	RedisUrl  string `mapstructure:"REDIS_URL"`
 	RedisPass string `mapstructure:"REDIS_PASS"`
